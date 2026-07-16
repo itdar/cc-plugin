@@ -1,10 +1,14 @@
+<div align="center">
+
+[English](../README.md) · **한국어** · [日本語](ja.md) · [Español](es.md) · [Français](fr.md) · [Deutsch](de.md) · [Português](pt.md) · [中文](zh.md)
+
+</div>
+
 # newsline
 
 **Claude Code 작업 끝나길 기다리는 동안, 상태줄에서 최신 한줄 뉴스를 확인하세요.**
 긴 작업을 기다리는 시간이 뉴스 한 번 훑는 시간이 됩니다 — 세션 하단에 지역 맞춤 헤드라인이
 회전 표시됩니다. 기존 상태줄(HUD) **아래 줄에** 붙어서, HUD는 그대로 보입니다.
-
-[English](../README.md) · **한국어**
 
 ## 설치 & 실행 — 한 줄
 

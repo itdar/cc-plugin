@@ -1,10 +1,14 @@
+<div align="center">
+
+**English** · [한국어](readme/ko.md) · [日本語](readme/ja.md) · [Español](readme/es.md) · [Français](readme/fr.md) · [Deutsch](readme/de.md) · [Português](readme/pt.md) · [中文](readme/zh.md)
+
+</div>
+
 # newsline
 
 **Waiting for Claude Code to finish? Read the latest one-line news right in your status line.**
 A rotating regional headline sits at the bottom of your session — so a long wait turns into a
 quick news check. It shows *below* your existing status line (your HUD stays).
-
-**English** · [한국어](readme/ko.md)
 
 ## Install & run — one line
 
