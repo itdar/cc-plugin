@@ -1,0 +1,39 @@
+{
+  "_comment": "locale language -> ordered keyless RSS/Atom feeds. National outlet first (in-language, higher quality), Google News locale feed last as a guaranteed fallback. fetch.py tries each in order; the first that yields an item wins, so a dead/blocked feed is skipped gracefully. All URLs here were reachability-validated. When adding feeds, also add the article-link domain to ../server/allowlist.json.",
+  "en": [
+    "https://feeds.bbci.co.uk/news/rss.xml",
+    "https://feeds.npr.org/1001/rss.xml",
+    "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
+  ],
+  "ko": [
+    "https://www.yna.co.kr/rss/news.xml",
+    "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko"
+  ],
+  "ja": [
+    "https://www.nhk.or.jp/rss/news/cat0.xml",
+    "https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja"
+  ],
+  "es": [
+    "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada",
+    "https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es"
+  ],
+  "fr": [
+    "https://www.lemonde.fr/rss/une.xml",
+    "https://news.google.com/rss?hl=fr&gl=FR&ceid=FR:fr"
+  ],
+  "de": [
+    "https://www.tagesschau.de/index~rss2.xml",
+    "https://www.spiegel.de/schlagzeilen/tops/index.rss",
+    "https://news.google.com/rss?hl=de&gl=DE&ceid=DE:de"
+  ],
+  "pt": [
+    "https://g1.globo.com/rss/g1/",
+    "https://news.google.com/rss?hl=pt-BR&gl=BR&ceid=BR:pt-419"
+  ],
+  "zh": [
+    "https://news.google.com/rss?hl=zh-CN&gl=CN&ceid=CN:zh-Hans"
+  ],
+  "default": [
+    "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
+  ]
+}

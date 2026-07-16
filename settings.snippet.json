@@ -1,0 +1,8 @@
+{
+  "_comment": "Merge this into ~/.claude/settings.json (user) or .claude/settings.json (project). Replace the absolute path. During dev, point clicks at your local server with:  NEWSLINE_ENDPOINT=http://localhost:8787/r",
+  "statusLine": {
+    "type": "command",
+    "command": "/ABSOLUTE/PATH/TO/plugin/statusline.sh",
+    "refreshInterval": 10
+  }
+}

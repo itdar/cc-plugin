@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+# newsline — single CLI entrypoint for the local news status-line utility.
+#
+#   newsline init        interactive setup: language, topic, status-line wiring.
+#                        COMPOSES with an existing status line (e.g. your HUD),
+#                        so rate-limit / context info stays visible.
+#   newsline render      what settings.json runs each refresh (base HUD + news).
+#   newsline refresh     force a cache refresh now.
+#   newsline once        fetch + print headlines once (debug).
+#   newsline uninstall   remove the wiring, restore what was there.
+#   newsline help
+#
+# Test overrides: NEWSLINE_SETTINGS, NEWSLINE_CONFIG_DIR, NEWSLINE_CACHE.
+set -u
+
+# resolve our real dir even when invoked via a PATH symlink (so helpers are found)
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  case "$SOURCE" in /*) ;; *) SOURCE="$DIR/$SOURCE" ;; esac
+done
+HERE="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+CONFIG_DIR="${NEWSLINE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/newsline}"
+CONFIG="$CONFIG_DIR/config.json"
+SETTINGS="${NEWSLINE_SETTINGS:-$HOME/.claude/settings.json}"
+
+# Command written into settings.json. Prefer the PATH name; else quote the abs path.
+if command -v newsline >/dev/null 2>&1; then RENDER_CMD="newsline render"; else RENDER_CMD="\"$HERE/newsline\" render"; fi
+
+# ---- tiny JSON helpers (python; no jq dependency) ----
+cfg_get() { # cfg_get <key>
+  python3 - "$CONFIG" "$1" <<'PY' 2>/dev/null
+import json,sys
+try: d=json.load(open(sys.argv[1]))
+except Exception: d={}
+v=d.get(sys.argv[2])
+print("" if v is None else v)
+PY
+}
+settings_statusline_cmd() { # print current statusLine.command of a settings file
+  python3 - "$1" <<'PY' 2>/dev/null
+import json,sys
+try: d=json.load(open(sys.argv[1]))
+except Exception: d={}
+sl=d.get("statusLine")
+print(sl.get("command","") if isinstance(sl,dict) else "")
+PY
+}
+
+load_config() {
+  [ -f "$CONFIG" ] || return 0
+  local lang topic rotate count api endpoint
+  lang=$(cfg_get lang);   topic=$(cfg_get topic);   rotate=$(cfg_get rotate)
+  count=$(cfg_get count); api=$(cfg_get api);       endpoint=$(cfg_get endpoint)
+  [ -n "$lang" ] && [ "$lang" != "auto" ] && export NEWSLINE_LANG="$lang"
+  [ -n "$topic" ]    && export NEWSLINE_TOPIC="$topic"
+  [ -n "$rotate" ]   && export NEWSLINE_ROTATE="$rotate"
+  [ -n "$count" ]    && export NEWSLINE_COUNT="$count"
+  [ -n "$api" ]      && export NEWSLINE_API="$api"
+  [ -n "$endpoint" ] && export NEWSLINE_ENDPOINT="$endpoint"
+}
+
+detect_lang() {
+  local raw="${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}"
+  if command -v defaults >/dev/null 2>&1; then
+    raw="$(defaults read NSGlobalDomain AppleLocale 2>/dev/null || echo "$raw")"
+  fi
+  raw="${raw%%.*}"; raw="${raw%%@*}"; local l="${raw%%_*}"; l="${l%%-*}"
+  echo "${l:-en}"
+}
+
+# ---- subcommands ----
+cmd_render() { # base (existing HUD) first, newsline below — never blocks
+  load_config
+  local base input=""
+  base=$(cfg_get base_statusline)
+  [ -t 0 ] || input=$(cat 2>/dev/null)     # consume the session JSON if piped
+  if [ -n "$base" ]; then
+    printf '%s' "$input" | eval "$base" 2>/dev/null   # your HUD, unchanged
+    printf '\n'
+  fi
+  "$HERE/statusline.sh"                                # the news line, below
+}
+
+cmd_refresh() { load_config; "$HERE/refresh.sh"; }
+
+cmd_once() {
+  load_config; "$HERE/refresh.sh"
+  local dir="${NEWSLINE_CACHE:-$HOME/.cache/newsline}"
+  [ -s "$dir/line" ] && cat "$dir/line" && echo
+}
+
+cmd_init() {
+  local lang="" topic="" api="" endpoint="" rotate="8" count="5" compose="auto" yes="0" base_override="" a
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --lang) lang="$2"; shift 2;;      --topic) topic="$2"; shift 2;;
+      --api) api="$2"; shift 2;;        --endpoint) endpoint="$2"; shift 2;;
+      --rotate) rotate="$2"; shift 2;;  --count) count="$2"; shift 2;;
+      --base) base_override="$2"; shift 2;;
+      --compose) compose="yes"; shift;; --no-compose) compose="no"; shift;;
+      --settings) SETTINGS="$2"; shift 2;; --yes|-y) yes="1"; shift;;
+      *) shift;;
+    esac
+  done
+
+  local detected; detected=$(detect_lang)
+  if [ "$yes" = "0" ] && [ -t 0 ]; then
+    printf "News language [%s] (or 'auto'): " "$detected"; read -r a; lang="${a:-${lang:-$detected}}"
+    printf "Topic (general/tech/business/sports/world/science/health/entertainment) [%s]: " "${topic:-general}"
+    read -r a; topic="${a:-${topic:-general}}"
+  else
+    lang="${lang:-$detected}"; topic="${topic:-general}"
+  fi
+
+  # compose with an existing (non-newsline) status line?
+  local existing base=""
+  if [ -n "$base_override" ]; then
+    base="$base_override"                       # caller supplied the base explicitly
+  else
+    existing=$(settings_statusline_cmd "$SETTINGS")
+    if [ -n "$existing" ] && ! printf '%s' "$existing" | grep -q "newsline"; then
+      a="y"
+      case "$compose" in
+        yes) a="y";; no) a="n";;
+        auto) if [ "$yes" = "0" ] && [ -t 0 ]; then
+                printf "Existing status line found — keep it and show newsline below? [Y/n]: "
+                read -r a; a="${a:-y}"
+              fi;;
+      esac
+      case "$a" in [Nn]*) base="";; *) base="$existing";; esac
+    fi
+  fi
+
+  mkdir -p "$CONFIG_DIR"
+  python3 - "$CONFIG" "$lang" "$topic" "$rotate" "$count" "$api" "$endpoint" "$base" <<'PY'
+import json,sys
+_,path,lang,topic,rotate,count,api,endpoint,base=sys.argv
+d={"lang":lang,"topic":topic,"rotate":int(rotate),"count":int(count)}
+if api: d["api"]=api
+if endpoint: d["endpoint"]=endpoint
+if base: d["base_statusline"]=base
+json.dump(d,open(path,"w"),indent=2,ensure_ascii=False)
+PY
+
+  python3 - "$SETTINGS" "$RENDER_CMD" <<'PY'
+import json,os,sys
+path,cmd=sys.argv[1],sys.argv[2]
+try: d=json.load(open(path))
+except Exception: d={}
+d["statusLine"]={"type":"command","command":cmd,"refreshInterval":5}
+os.makedirs(os.path.dirname(path) or ".",exist_ok=True)
+json.dump(d,open(path,"w"),indent=2,ensure_ascii=False)
+PY
+
+  echo "✔ newsline installed (lang=$lang, topic=$topic)."
+  [ -n "$base" ] && echo "  composing with your existing status line — it stays visible above the news."
+  echo "  Start a NEW Claude Code session to see it."
+}
+
+cmd_uninstall() {
+  local base; base=$(cfg_get base_statusline)
+  python3 - "$SETTINGS" "$base" <<'PY'
+import json,sys
+path,base=sys.argv[1],sys.argv[2]
+try: d=json.load(open(path))
+except Exception: d={}
+sl=d.get("statusLine"); cmd=sl.get("command","") if isinstance(sl,dict) else ""
+if "newsline" in cmd:
+    if base: d["statusLine"]={"type":"command","command":base}
+    else: d.pop("statusLine",None)
+    json.dump(d,open(path,"w"),indent=2,ensure_ascii=False); print("reverted status line")
+else:
+    print("status line not managed by newsline; left as-is")
+PY
+  rm -f "$CONFIG" 2>/dev/null
+  echo "✔ newsline uninstalled."
+}
+
+usage() {
+  cat <<'EOF'
+newsline — local news status-line utility
+  newsline init [--lang ko] [--topic tech]   set up & wire the status line
+  newsline uninstall                          remove & restore previous status line
+EOF
+  if [ "${1:-}" = "--all" ]; then
+    cat <<'EOF'
+
+internal (Claude Code calls these automatically; for debugging only):
+  newsline render      draw the status line now (HUD + news)
+  newsline refresh     force a cache refresh
+  newsline once        fetch + print headlines once
+EOF
+  fi
+}
+
+case "${1:-help}" in
+  render) shift; cmd_render "$@";;
+  refresh) shift; cmd_refresh "$@";;
+  once) shift; cmd_once "$@";;
+  init) shift; cmd_init "$@";;
+  uninstall) shift; cmd_uninstall "$@";;
+  help|-h|--help) shift; usage "$@";;
+  *) usage; exit 1;;
+esac
