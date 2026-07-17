@@ -250,7 +250,7 @@ PY
 
   # apply the new language/topic on the next render, not after the old cache expires
   local cache="${NEWSLINE_CACHE:-$HOME/.cache/newsline}"
-  rm -f "$cache/line" "$cache/feeds.resolved.json" "$cache/feeds.resolved.ok" 2>/dev/null
+  rm -f "$cache/line" "$cache/feeds.resolved.json" "$cache/feeds.resolved.ok" "$cache/notice" 2>/dev/null
 
   echo "✔ newsline installed (lang=$lang, topic=$topic)."
   [ -n "$base" ] && echo "  composing with your existing status line — it stays visible above the news."
@@ -292,7 +292,7 @@ else:
     print("status line not managed by newsline; left as-is")
 PY
   local cache="${NEWSLINE_CACHE:-$HOME/.cache/newsline}"
-  rm -f "$CONFIG" "$cache/line" "$cache/feeds.resolved.json" "$cache/feeds.resolved.ok" 2>/dev/null
+  rm -f "$CONFIG" "$cache/line" "$cache/feeds.resolved.json" "$cache/feeds.resolved.ok" "$cache/notice" 2>/dev/null
   echo "✔ newsline uninstalled."
 }
 

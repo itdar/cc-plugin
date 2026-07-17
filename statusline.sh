@@ -42,3 +42,10 @@ if [ -s "$CACHE_FILE" ]; then
 else
   printf '📰 …'   # first run, before the first refresh lands
 fi
+
+# --- server-driven update nudge (written/cleared by refresh.sh), below the news ---
+NOTICE_FILE="$CACHE_DIR/notice"
+if [ -s "$NOTICE_FILE" ]; then
+  [ -s "$CACHE_FILE" ] || printf '\n'   # placeholder path prints without a newline
+  head -1 "$NOTICE_FILE"
+fi

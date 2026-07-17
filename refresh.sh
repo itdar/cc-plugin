@@ -16,6 +16,9 @@ FEEDS="${NEWSLINE_FEEDS:-$HERE/feeds.json}"
 # through it so monetization can be switched on later WITHOUT re-shipping.
 ENDPOINT="${NEWSLINE_ENDPOINT:-https://newsline.thesockerrr.workers.dev/r}"
 COUNT="${NEWSLINE_COUNT:-15}"         # how many headlines to cache for rotation
+# Client version, sent to /feed as ?v= for the server-side update nudge.
+# Bump together with package.json when tagging a release.
+export NEWSLINE_VERSION="${NEWSLINE_VERSION:-0.1.0}"
 LOCK="$CACHE_DIR/refresh.lock"
 mkdir -p "$CACHE_DIR" 2>/dev/null
 
@@ -80,6 +83,34 @@ if [ "$need_resolve" = "1" ]; then
     rm -f "$RESOLVED.tmp" 2>/dev/null
     [ -s "$RESOLVED" ] || cp "$FEEDS" "$RESOLVED" 2>/dev/null   # last-ditch fallback to bundled feeds
   fi
+fi
+
+# --- server-driven update nudge: one extra line below the news --------------
+# If the server flagged this client as too old (RESOLVED has "_update"),
+# write the notice line statusline.sh appends; otherwise clear it. Skipped
+# (cleared) when this client already meets minVersion, so the nudge stops
+# right after an update even while the old RESOLVED is still cached.
+NOTICE="$CACHE_DIR/notice"
+msg=$(python3 -c '
+import json, os, sys
+try:
+    u = json.load(open(sys.argv[1])).get("_update") or {}
+except Exception:
+    u = {}
+def pv(s): return [int(x) if x.isdigit() else 0 for x in str(s).split(".")]
+mv, cur = u.get("minVersion", ""), os.environ.get("NEWSLINE_VERSION", "")
+print("" if (mv and cur and pv(cur) >= pv(mv)) else u.get("message", ""))
+' "$RESOLVED" 2>/dev/null | tr -d '\000-\037')
+if [ -n "$msg" ]; then
+  case "$HERE" in                      # install channel by where we live
+    *"/node_modules/"*)      ucmd="npm i -g newsline-cli" ;;
+    *[Cc]ellar*|*linuxbrew*) ucmd="brew upgrade newsline" ;;
+    *) ucmd="curl -fsSL https://raw.githubusercontent.com/itdar/cc-plugin/master/install.sh | sh" ;;
+  esac
+  # yellow line, command in bold bright yellow — mirrors Claude Code's own update nudge
+  printf '\033[33m[%s] Run: \033[1;93m%s\033[0m\n' "$msg" "$ucmd" > "$NOTICE.tmp" && mv -f "$NOTICE.tmp" "$NOTICE"
+else
+  rm -f "$NOTICE" 2>/dev/null
 fi
 
 # --- fetch + parse + build the line; write atomically, keep old cache on failure ---

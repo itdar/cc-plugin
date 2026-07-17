@@ -62,6 +62,7 @@ def local_feeds(lang, path):
 
 
 def server_feeds(lang, api_base):
+    """Return (feeds_or_None, update_or_None) from the curation API."""
     params = {
         "lang": lang,
         "country": os.environ.get("NEWSLINE_COUNTRY", ""),
@@ -69,18 +70,22 @@ def server_feeds(lang, api_base):
         "dow": os.environ.get("NEWSLINE_DOW", ""),
         "tz": os.environ.get("NEWSLINE_TZ", ""),
         "topic": os.environ.get("NEWSLINE_TOPIC", ""),
+        "v": os.environ.get("NEWSLINE_VERSION", ""),
     }
     url = api_base.rstrip("/") + "/feed?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"User-Agent": "newsline/0.1"})
     obj = json.loads(urllib.request.urlopen(req, timeout=TIMEOUT).read())
+    update = obj.get("update")
+    if not isinstance(update, dict):
+        update = None
     feeds = obj.get("feeds")
     if isinstance(feeds, list):
         # fetch.py urlopens these — accept only http(s) URLs
         feeds = [x for x in feeds
                  if isinstance(x, str) and x.startswith(("http://", "https://"))]
-        if feeds:
-            return feeds
-    return None
+    else:
+        feeds = None
+    return (feeds or None), update
 
 
 def main():
@@ -91,12 +96,12 @@ def main():
 
     local_urls, default = local_feeds(lang, local_path)
 
-    feeds = None
+    feeds = update = None
     if api_base:
         try:
-            feeds = server_feeds(lang, api_base)   # server-first
+            feeds, update = server_feeds(lang, api_base)   # server-first
         except Exception:
-            feeds = None                            # any issue -> local fallback
+            feeds, update = None, None              # any issue -> local fallback
     feeds = feeds or local_urls or default
 
     # topic preference leads (keyless Google News topic feed), general as backup
@@ -106,7 +111,10 @@ def main():
 
     if not feeds:
         return 1
-    sys.stdout.write(json.dumps({lang: feeds, "default": default or feeds}, ensure_ascii=False))
+    out = {lang: feeds, "default": default or feeds}
+    if update:
+        out["_update"] = update   # refresh.sh turns this into the notice line
+    sys.stdout.write(json.dumps(out, ensure_ascii=False))
     return 0
 
 
