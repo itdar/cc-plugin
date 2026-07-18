@@ -48,10 +48,14 @@ ICON = "" if _icon.strip().lower() in ("none", "off") else _icon
 LINKHINT = (os.environ.get("NEWSLINE_LINKHINT") or "").strip().lower() in ("1", "true", "yes", "on")
 ATOM = "{http://www.w3.org/2005/Atom}"
 _ws = re.compile(r"\s+")
+# Control chars (incl. ESC) from feed titles would inject terminal escape
+# sequences straight into the status line — strip them before rendering.
+_ctrl = re.compile(r"[\x00-\x1f\x7f]")
 
 
 def clean(title):
-    return _ws.sub(" ", title).strip()
+    # whitespace first (\t\n become spaces), then the remaining control chars
+    return _ctrl.sub("", _ws.sub(" ", title)).strip()
 
 
 def parse_items(data):
@@ -111,7 +115,16 @@ def osc8(url, text):
 
 
 def render(title, link, endpoint, lang):
-    wrapped = endpoint + "?" + urllib.parse.urlencode({"u": link, "c": lang})
+    # c/t/v ride along for click analytics (lang / topic pref / client version);
+    # the server logs them so vertical-partner pitches can tie clicks to topics.
+    q = {"u": link, "c": lang}
+    topic = (os.environ.get("NEWSLINE_TOPIC") or "").strip().lower()
+    if topic:
+        q["t"] = topic
+    ver = (os.environ.get("NEWSLINE_VERSION") or "").strip()
+    if ver:
+        q["v"] = ver
+    wrapped = endpoint + "?" + urllib.parse.urlencode(q)
     if len(title) > MAX_TITLE:
         title = title[: MAX_TITLE - 1] + "…"
     label = f"{ICON} {title}" if ICON else title
