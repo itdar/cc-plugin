@@ -70,6 +70,24 @@ npm i -g newsline-cli && newsline init
 也可以运行 `newsline color` — 每次执行切换到下一种颜色（default(gray) → white → cyan →
 yellow → green → blue → magenta → red，下次状态栏刷新即生效）。
 
+## 更新
+
+按你安装的方式更新即可 — 语言/主题/颜色设置会保留：
+
+```sh
+# curl — 重新运行安装脚本（跳过设置，仅更新 CLI）
+curl -fsSL https://raw.githubusercontent.com/itdar/newsline/master/install.sh | NEWSLINE_NO_INIT=1 sh
+
+# Homebrew
+brew update && brew upgrade newsline
+
+# npm
+npm i -g newsline-cli@latest
+```
+
+Claude Code 插件：运行 `/plugin marketplace update itdar`，然后 `/reload-plugins`
+（或重启）。也可在 `/plugin` → **Marketplaces** 中启用后台自动更新。
+
 ## 卸载
 
 ```sh

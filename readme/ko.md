@@ -72,6 +72,24 @@ npm i -g newsline-cli && newsline init
 `newsline color`를 실행할 때마다 다음 색으로 넘어갑니다 (default(gray) → white → cyan →
 yellow → green → blue → magenta → red 순환, 다음 상태줄 갱신 때 반영).
 
+## 업데이트
+
+설치했던 방식 그대로 업데이트하면 됩니다 — 언어·분야·색 설정은 유지됩니다:
+
+```sh
+# curl — 설치 스크립트 재실행 (셋업은 건너뛰고 CLI만 갱신)
+curl -fsSL https://raw.githubusercontent.com/itdar/newsline/master/install.sh | NEWSLINE_NO_INIT=1 sh
+
+# Homebrew
+brew update && brew upgrade newsline
+
+# npm
+npm i -g newsline-cli@latest
+```
+
+Claude Code 플러그인: `/plugin marketplace update itdar` 실행 후 `/reload-plugins`
+(또는 재시작). `/plugin` → **Marketplaces**에서 백그라운드 자동 업데이트도 켤 수 있습니다.
+
 ## 제거
 
 ```sh

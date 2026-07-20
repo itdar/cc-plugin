@@ -78,6 +78,24 @@ O usa `newsline color` — cada ejecución pasa al siguiente color (default(gray
 cyan → yellow → green → blue → magenta → red), visible en el próximo refresco de la
 línea de estado.
 
+## Actualizar
+
+Actualiza igual que instalaste — se conservan tus ajustes de idioma/tema/color:
+
+```sh
+# curl — vuelve a ejecutar el instalador (omite la configuración, solo actualiza la CLI)
+curl -fsSL https://raw.githubusercontent.com/itdar/newsline/master/install.sh | NEWSLINE_NO_INIT=1 sh
+
+# Homebrew
+brew update && brew upgrade newsline
+
+# npm
+npm i -g newsline-cli@latest
+```
+
+Plugin de Claude Code: ejecuta `/plugin marketplace update itdar` y luego `/reload-plugins`
+(o reinicia). También puedes activar la actualización automática en `/plugin` → **Marketplaces**.
+
 ## Desinstalar
 
 ```sh

@@ -75,6 +75,24 @@ Re-run `newsline init`, or edit `~/.config/newsline/config.json`:
 Or run `newsline color` — each run steps to the next color (default(gray) → white →
 cyan → yellow → green → blue → magenta → red), shown on the next status-line tick.
 
+## Update
+
+Update the same way you installed — your language/topic/color settings are kept:
+
+```sh
+# curl — re-run the installer (skips setup, just refreshes the CLI)
+curl -fsSL https://raw.githubusercontent.com/itdar/newsline/master/install.sh | NEWSLINE_NO_INIT=1 sh
+
+# Homebrew
+brew update && brew upgrade newsline
+
+# npm
+npm i -g newsline-cli@latest
+```
+
+Claude Code plugin: run `/plugin marketplace update itdar`, then `/reload-plugins`
+(or restart). You can also enable background auto-update under `/plugin` → **Marketplaces**.
+
 ## Uninstall
 
 ```sh
