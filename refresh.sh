@@ -108,8 +108,8 @@ print("" if (mv and cur and pv(cur) >= pv(mv)) else u.get("message", ""))
 ' "$RESOLVED" 2>/dev/null | tr -d '\000-\037')
 if [ -n "$msg" ]; then
   case "$HERE" in                      # install channel by where we live
-    *"/node_modules/"*)      ucmd="npm i -g newsline-cli" ;;
-    *[Cc]ellar*|*linuxbrew*) ucmd="brew upgrade newsline" ;;
+    *"/node_modules/"*)      ucmd="npm i -g newsline-cli@latest" ;;
+    *[Cc]ellar*|*linuxbrew*) ucmd="brew update && brew upgrade newsline" ;;
     *) ucmd="curl -fsSL https://raw.githubusercontent.com/itdar/newsline/master/install.sh | sh" ;;
   esac
   # yellow line, command in bold bright yellow — mirrors Claude Code's own update nudge
