@@ -342,6 +342,8 @@ PY
 }
 
 cmd_uninstall() {
+  local purge=0 a
+  for a in "$@"; do case "$a" in --purge|-p) purge=1 ;; esac; done
   local base base_obj
   base=$(cfg_get base_statusline)
   base_obj=$(cfg_get_obj base_statusline_obj)
@@ -378,6 +380,48 @@ PY
   local cache="${NEWSLINE_CACHE:-$HOME/.cache/newsline}"
   rm -f "$CONFIG" "$cache/line" "$cache/feeds.resolved.json" "$cache/feeds.resolved.ok" "$cache/notice" 2>/dev/null
   echo "✔ newsline uninstalled."
+
+  [ "$purge" = "1" ] || return 0
+  # --purge: also remove the CLI binary + the PATH line install.sh added. Only for
+  # the install.sh layout ($PREFIX/share/newsline + $PREFIX/bin/newsline); a
+  # package-managed install (brew/npm) is left to its own package manager.
+  case "$HERE" in
+    */share/newsline)
+      local prefix bin rc
+      prefix="$(cd "$HERE/../.." 2>/dev/null && pwd)"; bin="$prefix/bin"
+      if [ -e "$bin/newsline" ]; then
+        rm -f "$bin/newsline"
+        rm -rf "$HERE"                       # $PREFIX/share/newsline (this script's dir)
+        for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile" "$HOME/.config/fish/config.fish"; do
+          [ -f "$rc" ] || continue
+          awk -v bin="$bin" '
+            function strip(p){ sub(/^\/private/, "", p); return p }   # macOS /var == /private/var
+            /^# added by newsline installer$/ {
+              marker=$0
+              if ((getline pl) > 0) {
+                drop=0
+                if (match(pl, /\/[^ "]*\/bin/)) {
+                  d=substr(pl, RSTART, RLENGTH)
+                  if (strip(d) == strip(bin)) drop=1   # our block -> drop marker + path line
+                }
+                if (drop) next
+                print marker; print pl; next
+              }
+              print marker; next
+            }
+            { print }
+          ' "$rc" > "$rc.nltmp" 2>/dev/null && mv "$rc.nltmp" "$rc"
+        done
+        echo "✔ purged CLI: removed $bin/newsline and its PATH entry (open a new shell to refresh PATH)."
+      else
+        echo "ℹ nothing to purge (no $bin/newsline)."
+      fi
+      ;;
+    *)
+      echo "ℹ this CLI wasn't installed via install.sh (looks package-managed);"
+      echo "  remove it with:  brew uninstall newsline   or   npm uninstall -g newsline-cli"
+      ;;
+  esac
 }
 
 usage() {
@@ -390,7 +434,8 @@ newsline — local news status-line utility
                                               white → cyan → yellow → green → blue →
                                               magenta → red → back to default
   newsline colorlist                          list the available colors with a preview
-  newsline uninstall                          remove & restore previous status line
+  newsline uninstall [--purge]                remove & restore previous status line
+                                              (--purge also deletes the CLI + PATH line)
 EOF
   if [ "${1:-}" = "--all" ]; then
     cat <<'EOF'

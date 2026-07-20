@@ -98,7 +98,8 @@ Claude Code plugin: run `/plugin marketplace update itdar`, then `/reload-plugin
 ## Uninstall
 
 ```sh
-newsline uninstall      # restores your previous status line
+newsline uninstall           # restores your previous status line
+newsline uninstall --purge   # also removes the CLI binary + the PATH line install.sh added
 ```
 
 Needs `bash` + `python3` (macOS / Linux; Windows via WSL).

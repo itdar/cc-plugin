@@ -34,6 +34,32 @@ ln -sf "$SHARE/newsline" "$BIN/newsline"
 
 echo "✔ installed: $BIN/newsline"
 
+# Garbage-collect stale PATH lines from earlier installs whose prefix no longer
+# exists (e.g. throwaway test prefixes), so rc files don't pile up dead newsline
+# entries that shadow the current install. Only drops blocks whose dir is gone.
+prune_stale_newsline_path() { # $1 = rc file
+  [ -f "$1" ] || return 0
+  awk '
+    /^# added by newsline installer$/ {
+      marker=$0
+      if ((getline pl) > 0) {
+        keep=1
+        if (match(pl, /\/[^ "]*\/bin/)) {
+          d=substr(pl, RSTART, RLENGTH)
+          if (system("[ -d \"" d "\" ]") != 0) keep=0
+        }
+        if (keep) { print marker; print pl }
+        next
+      }
+      print marker; next
+    }
+    { print }
+  ' "$1" > "$1.nltmp" 2>/dev/null && mv "$1.nltmp" "$1"
+}
+for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile" "$HOME/.config/fish/config.fish"; do
+  prune_stale_newsline_path "$rc"
+done
+
 # Register $BIN on PATH for future shells (idempotent), by shell rc file.
 case ":$PATH:" in
   *":$BIN:"*)
