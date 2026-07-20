@@ -42,6 +42,23 @@ colorize() { # wrap text in the configured color (no-op when unset); no newline
   if [ -n "$SGR" ]; then printf '\033[%sm%s\033[0m' "$SGR" "$1"; else printf '%s' "$1"; fi
 }
 
+# --- per-terminal click hint, printed dim before the headline, e.g. "(Cmd+Click)" ---
+# Headlines are OSC 8 hyperlinks; WHICH modifier opens them is the terminal's call,
+# not ours (macOS terminals use Cmd, most others Ctrl, kitty Ctrl+Shift). Show the
+# right one so users know how to click through. NEWSLINE_CLICKHINT: unset/auto/on =
+# auto-detect; off/none/0 = hide; any other value is used verbatim (e.g. "⌘-click").
+click_hint() {
+  case "$(printf '%s' "${NEWSLINE_CLICKHINT:-}" | tr '[:upper:]' '[:lower:]')" in
+    off|none|no|0|false) return 0 ;;                                      # hidden
+    ''|auto|on|yes|1|true) ;;                                             # auto-detect
+    *) printf '\033[90m(%s)\033[0m ' "$NEWSLINE_CLICKHINT"; return 0 ;;   # custom label
+  esac
+  local sys="${OSTYPE:-}"; [ -n "$sys" ] || sys="$(uname -s 2>/dev/null)"
+  local mod; case "$sys" in [Dd]arwin*) mod="Cmd+Click" ;; *) mod="Ctrl+Click" ;; esac
+  { [ -n "${KITTY_WINDOW_ID:-}" ] || [ "${TERM:-}" = "xterm-kitty" ]; } && mod="Ctrl+Shift+Click"
+  printf '\033[90m(%s)\033[0m ' "$mod"
+}
+
 # --- print one headline, rotating across the cached set by wall-clock time ---
 # The cache holds N headlines (one per line). We show a different one every
 # NEWSLINE_ROTATE seconds — a ticker feel with zero stored state.
@@ -53,6 +70,7 @@ if [ -s "$CACHE_FILE" ]; then
     [ "$rot" -ge 1 ] || rot=6            # 0 would divide by zero below
     now="${NEWSLINE_NOW:-$(date +%s)}"   # NEWSLINE_NOW overrides clock (tests/debug)
     idx=$(( (now / rot) % n + 1 ))
+    click_hint                            # "(Cmd+Click)" etc., before the linked headline
     colorize "$(sed -n "${idx}p" "$CACHE_FILE")"; printf '\n'
   else
     colorize '📰 …'
