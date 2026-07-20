@@ -29,6 +29,8 @@ npm i -g newsline-cli && newsline init
 /plugin install newsline@itdar
 ```
 
+**用你已经装好的那个就行 —— 四选一即可。**（没有 `brew`/`npm`？用 `curl` 那一行。）
+
 新闻行会在你的 **下一条消息** 时出现——无需重启。设置会询问语言、主题和文字颜色，并保留你现有的状态栏。
 
 ## 它做什么

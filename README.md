@@ -29,6 +29,8 @@ npm i -g newsline-cli && newsline init
 /plugin install newsline@itdar
 ```
 
+**Pick whichever you already have — you only need one.** (No `brew`/`npm`? Use the `curl` line.)
+
 The news line appears on your **next message** — no restart. Setup asks for a language, topic & headline color
 and keeps your existing status line.
 

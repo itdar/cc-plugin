@@ -30,6 +30,8 @@ npm i -g newsline-cli && newsline init
 /plugin install newsline@itdar
 ```
 
+**Nimm einfach das, was du schon hast — eines genügt.** (Kein `brew`/`npm`? Nimm die `curl`-Zeile.)
+
 Die News-Zeile erscheint bei deiner **nächsten Nachricht** – kein Neustart nötig. Die Einrichtung fragt
 nach Sprache, Thema und Schlagzeilenfarbe und behält deine bestehende Statusleiste bei.
 

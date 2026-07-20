@@ -29,6 +29,8 @@ npm i -g newsline-cli && newsline init
 /plugin install newsline@itdar
 ```
 
+**가진 것 아무거나 하나만 고르세요 — 하나면 됩니다.** (`brew`/`npm`이 없으면 `curl` 줄을 쓰세요.)
+
 뉴스 줄은 **다음 메시지 때** 나타납니다 — 재시작 불필요. 셋업은 언어·분야·글자 색을 물어보고, 기존
 상태줄은 유지합니다.
 

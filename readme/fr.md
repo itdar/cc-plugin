@@ -29,6 +29,8 @@ npm i -g newsline-cli && newsline init
 /plugin install newsline@itdar
 ```
 
+**Choisissez celui que vous avez déjà — un seul suffit.** (Pas de `brew`/`npm` ? Utilisez la ligne `curl`.)
+
 La ligne d'actualité apparaît dès votre **prochain message** — sans redémarrage. La configuration vous
 demande une langue, un thème et une couleur de titre, et conserve votre barre d'état existante.
 

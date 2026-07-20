@@ -29,6 +29,8 @@ npm i -g newsline-cli && newsline init
 /plugin install newsline@itdar
 ```
 
+**お持ちのものを 1 つだけ選べば OK です。**（`brew`/`npm` がなければ `curl` の行を使ってください。）
+
 ニュース行は **次のメッセージ** で表示されます — 再起動は不要です。セットアップで言語・トピック・文字色を
 尋ね、既存のステータスラインはそのまま保持します。
 
